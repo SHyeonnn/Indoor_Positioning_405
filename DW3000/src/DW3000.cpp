@@ -20,7 +20,6 @@
 DW3000Class DW3000;
 
 #define DEBUG_OUTPUT 0 // Turn to 1 to get all reads, writes, etc. as info in the console
-#define DEBUG_PRINT 1 // Turn to 1 to get all reads, writes, etc. as info in the console
 
 int antenna_delay = 0x3FCA; // For calibration purposes; the smaller the number, the longer the ranging results
 
@@ -357,17 +356,6 @@ void DW3000Class::ds_sendFrame(int stage) {
     write(0x14, 0x03, stage & 0x7);
     setFrameLength(4);
 
-    // Debug 출력
-    if (DEBUG_PRINT) {
-        Serial.print("[SEND] sender=0x");
-        Serial.print(sender, HEX);
-        Serial.print(" dest=0x");
-        Serial.print(destination, HEX);
-        Serial.print(" stage=");
-        Serial.println(stage);
-    }
-
-
     TXInstantRX(); //Await response
 
     bool error = true;
@@ -396,15 +384,7 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
     write(0x14, 0x08, t_replyB);
 
     setFrameLength(12);
-    //Debug
-    if (DEBUG_PRINT) {
-    Serial.print("[SEND RTINFO]");
-    Serial.print("  sender=0x"); Serial.print(sender, HEX);
-    Serial.print("  dest=0x");   Serial.print(destination, HEX);
-    Serial.print("  stage=");    Serial.println(4);
-    Serial.print("               t_roundB="); Serial.print(t_roundB);
-    Serial.print("  t_replyB="); Serial.println(t_replyB);
-    }
+
     TXInstantRX();
 }
 
@@ -418,17 +398,15 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
  @return returns the time in units of 15.65ps that the frames were in the air on average (only one direction)
 */
 int DW3000Class::ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
-    
-    // 원 code에서는 DEBUG_OUTPUT
-    if (DEBUG_PRINT) {
-        Serial.print("\nProcessing Information:");
-        Serial.print(" t_roundA: ");
-        Serial.print(t_roundA);
-        Serial.print("  t_replyA: ");
-        Serial.print(t_replyA);
-        Serial.print("  t_roundB: ");
-        Serial.print(t_roundB);
-        Serial.print("  t_replyB: ");
+    if (DEBUG_OUTPUT) {
+        Serial.println("\nProcessing Information:");
+        Serial.print("t_roundA: ");
+        Serial.println(t_roundA);
+        Serial.print("t_replyA: ");
+        Serial.println(t_replyA);
+        Serial.print("t_roundB: ");
+        Serial.println(t_roundB);
+        Serial.print("t_replyB: ");
         Serial.println(t_replyB);
     }
 
