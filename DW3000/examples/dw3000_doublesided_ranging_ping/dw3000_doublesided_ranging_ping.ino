@@ -1,8 +1,4 @@
-// Tag - Initiator/Ping
-
 #include "DW3000.h"
-
-#define DEBUG_PRINT 1 
 
 /*
    BE AWARE: Baud Rate got changed to 2.000.000!
@@ -19,14 +15,6 @@
 */
 
 #define ROUND_DELAY 500 // Delay in milliseconds that the chip waits between PING requests
-
-//Setting the ID of anchor & tag
-#define TAG_ID 0xA0
-#define ANCHOR1_ID 0x01
-#define BROADCAST_ID 0xFF
-
-
-
 
 static int frame_buffer = 0; // Variable to store the transmitted message
 static int rx_status; // Variable to store the current status of the receiver operation
@@ -89,9 +77,6 @@ void setup()
   Serial.println("> double-sided PING with timestamp example <\n");
   Serial.println("[INFO] Setup is finished.");
 
-  // Set this deviceID
-  DW3000.setSenderID(TAG_ID);
-  
   DW3000.configureAsTX(); // Configure basic settings for frame transmitting
 
   DW3000.clearSystemStatus();
@@ -100,26 +85,15 @@ void setup()
 void loop()
 {
   switch (curr_stage) {
-
-    //Transmit the Poll message
     case 0:  // Start ranging.
-      
-      DW3000.setDestinationID(BROADCAST_ID);
-      
       t_roundA = 0;
       t_replyA = 0;
+
       DW3000.ds_sendFrame(1);
-      if (DEBUG_PRINT){
-        Serial.println("-----------------------------------------");
-        Serial.println("----------------!!START!!----------------");
-        Serial.println("Start Transmit the Poll msg");
-      }
       tx = DW3000.readTXTimestamp();
 
       curr_stage = 1;
       break;
-
-    //Receive the Response message
     case 1:  // Await first response.
       if (rx_status = DW3000.receivedFrameSucc()) {
         DW3000.clearSystemStatus();
@@ -128,28 +102,9 @@ void loop()
             Serial.println("[WARNING] Error frame detected! Reverting back to stage 0.");
             curr_stage = 0;
           } else if (DW3000.ds_getStage() != 2) {
-            Serial.println("Error Get Stage");
-            Serial.println(DW3000.ds_getStage());
             DW3000.ds_sendErrorFrame();
             curr_stage = 0;
           } else {
-
-            if (DEBUG_PRINT){
-              //Debug msg
-              Serial.println("Success recieved the Response msg");
-              int response_sender = DW3000.getSenderID();
-              int response_destination = DW3000.getDestinationID();
-              int response_stage = DW3000.ds_getStage();
-              
-              //Debug msg print
-              Serial.print("[RESPONSE msg] sender=0x");
-              Serial.print(response_sender, HEX);
-              Serial.print(" dest=0x");
-              Serial.print(response_destination, HEX);
-              Serial.print(" stage=");
-              Serial.println(response_stage);
-            }
-            
             curr_stage = 2;
           }
         } else // if rx_status returns error (2)
@@ -159,13 +114,10 @@ void loop()
         }
       }
       break;
-
-    //Transmit the Final message
     case 2:  // Response received. Send second ranging.
       rx = DW3000.readRXTimestamp();
-      DW3000.setDestinationID(ANCHOR1_ID);
+
       DW3000.ds_sendFrame(3);
-      Serial.println("Start Transmit the Final msg");
       t_roundA = rx - tx;
 
       tx = DW3000.readTXTimestamp();
@@ -173,8 +125,6 @@ void loop()
 
       curr_stage = 3;
       break;
-
-    //Receive the Report message
     case 3:  // Await second response.
       if (rx_status = DW3000.receivedFrameSucc()) {
         DW3000.clearSystemStatus();
@@ -183,22 +133,6 @@ void loop()
             Serial.println("[WARNING] Error frame detected! Reverting back to stage 0.");
             curr_stage = 0;
           } else {
-
-            if (DEBUG_PRINT){
-              //Debug msg
-              Serial.println("Success recieved the Report msg");
-              int report_sender = DW3000.getSenderID();
-              int report_destination = DW3000.getDestinationID();
-              int report_stage = DW3000.ds_getStage();
-              
-              //Debug msg print
-              Serial.print("[REPORT msg] sender=0x");
-              Serial.print(report_sender, HEX);
-              Serial.print(" dest=0x");
-              Serial.print(report_destination, HEX);
-              Serial.print(" stage=");
-              Serial.println(report_stage);
-            }
             clock_offset = DW3000.getRawClockOffset();
             curr_stage = 4;
           }
@@ -210,7 +144,6 @@ void loop()
       }
       break;
     case 4:  // Response received. Calculating results.
-      
       ranging_time = DW3000.ds_processRTInfo(t_roundA, t_replyA, DW3000.read(0x12, 0x04), DW3000.read(0x12, 0x08), clock_offset);
       distance = DW3000.convertToCM(ranging_time);
 
@@ -218,15 +151,9 @@ void loop()
       Serial.println("cm");
 
       curr_stage = 0;
-      
-      if (DEBUG_PRINT){
-      Serial.println("-----------------!!END!!-----------------");
-      Serial.println("-----------------------------------------");
-      }
-      
+
       delay(ROUND_DELAY);
       break;
-      
     default:
       Serial.print("[ERROR] Entered unknown stage (");
       Serial.print(curr_stage);
