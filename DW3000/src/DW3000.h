@@ -34,7 +34,7 @@ class DW3000Class {
 		static void setupGPIO();
 
 		// Double-Sided Ranging
-		static void ds_sendFrame(int stage);
+		static void ds_sendFrame(int stage, int resp_count);
 		static void ds_sendRTInfo(int t_roundB, int t_replyB);
 		static int  ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
 		static int  ds_getStage();

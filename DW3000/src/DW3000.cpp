@@ -350,12 +350,13 @@ void DW3000Class::setupGPIO() {
  @param stage Double-sided Ranging is more complicated than regular single-sided Ranging. Therefore,
               stages were introduced to make sure that the right frames get received at the right time. stage is a 3 bit int.
 */
-void DW3000Class::ds_sendFrame(int stage) {
+void DW3000Class::ds_sendFrame(int stage, int resp_count) {
     setMode(1);
     write(0x14, 0x01, sender & 0xFF);
     write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, stage & 0x7);
-    setFrameLength(4);
+    write(0x14, 0x04, resp_count & 0xFF);
+    setFrameLength(5);
 
     // Debug 출력
     if (DEBUG_PRINT) {
@@ -365,6 +366,8 @@ void DW3000Class::ds_sendFrame(int stage) {
         Serial.print(destination, HEX);
         Serial.print(" stage=");
         Serial.println(stage);
+        Serial.print(" resp_count=");
+        Serial.println(resp_count);
     }
 
 
