@@ -106,12 +106,7 @@ void loop()
     //Receive the Poll message
     case 0:  // Await ranging.
 
-      // Define Anchor Struct
-      struct Anchor anchor;
-      // Initialize the Buffer
-      for (int i = 0; i < Anchor::MAX_RESP; i++) {
-        anchor.resp_Tx_buffer[i] = 0;
-      }
+      // Initialize Anchor Struct
       resetAnchorStruct(anchor);
       
       DW3000.standardRX();
