@@ -47,41 +47,8 @@ static int curr_stage = 0;
 
 
 // Anchor Struct Setting
-struct Anchor
-{
-  int resp_count = 0;
-  bool received_resp = false;
-  bool received_report = false;
-
-  unsigned long long resp_Rx = 0;
-
-  int t_round_Anc = 0;
-  int t_reply_Anc = 0;
-
-  int t_round_tag = 0;
-  int t_reply_tag = 0;
-
-  int clock_offset = 0;
-
-  int ranging_time = 0;
-  float distance = 0;
-};
-
-struct AnchorAll
-{
-  struct Anchor AncA;
-  struct Anchor AncB;
-  struct Anchor AncC;
-  struct Anchor AncD;
-} anchor_all;
-
-// Tag Struct Setting
-struct Tag
-{
-  unsigned long long poll_Tx = 0;
-  unsigned long long final_Tx = 0;
-} tag;
-
+AnchorAll anchor_all;
+Tag tag;
 
 
 void setup()
@@ -231,11 +198,15 @@ void loop()
     //Receive the Report message
     case 3:  // Await second response.
       if (rx_status = DW3000.receivedFrameSucc()) {
+        
         DW3000.clearSystemStatus();
+        
         if (rx_status == 1) { // If frame reception was successful
+          
           if (DW3000.ds_isErrorFrame()) {
             Serial.println("[WARNING] Error frame detected!");
           } else {
+            
             if (DEBUG_PRINT){
               //Debug msg
               Serial.println("Success received the Report msg");
@@ -252,7 +223,7 @@ void loop()
               Serial.println(report_stage);
             }
 
-            if (saveReport(anchor_all, tag, DW3000.getSenderID(), DW3000.read(0x12, 0x04),  DW3000.read(0x12, 0x08), DW3000.getRawClockOffset())){
+            if (saveReport(anchor_all, DW3000.getSenderID(), DW3000.read(0x12, 0x04),  DW3000.read(0x12, 0x08), DW3000.getRawClockOffset())){
               // round, reply, clock offset
               if (allReportsReceived(anchor_all)){
                 if (DEBUG_PRINT){
@@ -267,14 +238,15 @@ void loop()
               }
 
             curr_stage = 4;
-          }
-        } else // if rx_status returns error (2)
-          {
+          } else {
+            // if rx_status returns error (2)
             Serial.println("[ERROR] Receiver Error occured! Aborting event.");
             DW3000.clearSystemStatus();
+            }
+          
           }
         }
-    }
+      }
       break;
 
     case 4:  // Response received. Calculating results.

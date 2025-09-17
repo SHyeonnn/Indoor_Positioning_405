@@ -439,9 +439,6 @@ void DW3000Class::ds_sendFinal(int stage, const AnchorAll &a) {
         Serial.print(destination, HEX);
         Serial.print(" stage=");
         Serial.println(stage);
-        Serial.print(" resp_count=");
-        Serial.println(resp_count);
-
         Serial.print(" A="); Serial.println(a.AncA.resp_count);
         Serial.print(" B="); Serial.println(a.AncB.resp_count);
         Serial.print(" C="); Serial.println(a.AncC.resp_count);
@@ -532,6 +529,9 @@ int DW3000Class::ds_getStage() {
     return read(0x12, 0x03) & 0b111;
 }
 
+int DW3000Class::ds_getRespCount() {
+    return read(0x12, 0x04) & 0xFF;
+}
 
 /*
  Checks if frame is error frame by checking its mode bits
