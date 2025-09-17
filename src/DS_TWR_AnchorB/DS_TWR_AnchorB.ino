@@ -3,7 +3,7 @@
 #include "DW3000.h"
 
 #define DEBUG_PRINT 1 
-// #define MAX_RESP 20
+
 /*
    BE AWARE: Baud Rate got changed to 2.000.000!
 
@@ -30,7 +30,7 @@
 #define C_Count 0x03
 #define D_Count 0x04
 
-
+const int MAX_RESP = 20;
 static int frame_buffer = 0; // Variable to store the transmitted message
 static int rx_status; // Variable to store the current status of the receiver operation
 static int tx_status; // Variable to store the current status of the receiver operation
@@ -44,8 +44,8 @@ static int tx_status; // Variable to store the current status of the receiver op
    4 - information frame sent
 */
 static int curr_stage = 0;
-
-struct Anchor
+static int count = 0;
+struct AnchorIn
 {
   unsigned long long poll_Rx = 0;
   unsigned long long resp_Tx = 0;
@@ -55,7 +55,6 @@ struct Anchor
   int t_reply = 0;
 
   int resp_count = 0;
-  int MAX_RESP = 20;
   unsigned long long resp_Tx_buffer[MAX_RESP];
 
 } anchor;
@@ -181,7 +180,7 @@ void loop()
       // sender = 0x1, dest = 0xA0, stage = 2
 
       anchor.resp_Tx = DW3000.readTXTimestamp();
-      anchor.resp_Tx_buffer[resp_count % anchor.MAX_RESP] = anchor.resp_Tx;
+      anchor.resp_Tx_buffer[anchor.resp_count % MAX_RESP] = anchor.resp_Tx;
       
       DW3000.standardRX();
 
@@ -228,13 +227,14 @@ void loop()
         Serial.print(" stage=");
         Serial.println(Final_stage);
       }
-      int count = DW3000.read(0x12, B_Count) & 0xFF;
+      count = DW3000.read(0x12, B_Count) & 0xFF;
       anchor.final_Rx = DW3000.readRXTimestamp();
 
-      if (count >= 0 && count < anchor.MAX_RESP){
+      if (count >= 0 && count < MAX_RESP){
         unsigned long long matched_respTx = anchor.resp_Tx_buffer[count];
         anchor.resp_Tx = matched_respTx;
         curr_stage = 3; 
+        count = 0;
       } else{
         Serial.print("[WARNING] Invalid count index=");
         Serial.println(count);
@@ -311,7 +311,7 @@ void loop()
 }
 
 
-void resetAnchorStruct(Anchor &anchor){
+void resetAnchorStruct(AnchorIn &anchor){
 
   anchor.poll_Rx = 0;
   anchor.resp_Tx = 0;
@@ -321,10 +321,9 @@ void resetAnchorStruct(Anchor &anchor){
   anchor.t_reply = 0;
 
   anchor.resp_count = 0;
-  anchor.MAX_RESP = 20;
   anchor.resp_Tx_buffer[MAX_RESP];
 
-  for (int i = 0; i < Anchor::MAX_RESP; i++) {
+  for (int i = 0; i < MAX_RESP; i++) {
     anchor.resp_Tx_buffer[i] = 0;
   }
 
