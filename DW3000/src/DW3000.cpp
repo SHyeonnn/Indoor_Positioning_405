@@ -350,7 +350,39 @@ void DW3000Class::setupGPIO() {
  @param stage Double-sided Ranging is more complicated than regular single-sided Ranging. Therefore,
               stages were introduced to make sure that the right frames get received at the right time. stage is a 3 bit int.
 */
-void DW3000Class::ds_sendFrame(int stage, int resp_count) {
+void DW3000Class::ds_sendPoll(int stage) {
+    setMode(1);
+    write(0x14, 0x01, sender & 0xFF);
+    write(0x14, 0x02, destination & 0xFF);
+    write(0x14, 0x03, stage & 0x7);
+    setFrameLength(4);
+
+    // Debug 출력
+    if (DEBUG_PRINT) {
+        Serial.print("[SEND] sender=0x");
+        Serial.print(sender, HEX);
+        Serial.print(" dest=0x");
+        Serial.print(destination, HEX);
+        Serial.print(" stage=");
+        Serial.println(stage);
+    }
+
+
+    TXInstantRX(); //Await response
+
+    bool error = true;
+    for (int i = 0; i < 50; i++) {
+        if (sentFrameSucc()) {
+            error = false;
+            break;
+        }
+    };
+    if (error) {
+        Serial.println("[ERROR] Could not send frame successfully!");
+    }
+}
+
+void DW3000Class::ds_sendResp(int stage, int resp_count) {
     setMode(1);
     write(0x14, 0x01, sender & 0xFF);
     write(0x14, 0x02, destination & 0xFF);
@@ -370,6 +402,51 @@ void DW3000Class::ds_sendFrame(int stage, int resp_count) {
         Serial.println(resp_count);
     }
 
+    TXInstantRX(); //Await response
+
+    bool error = true;
+    for (int i = 0; i < 50; i++) {
+        if (sentFrameSucc()) {
+            error = false;
+            break;
+        }
+    };
+    if (error) {
+        Serial.println("[ERROR] Could not send frame successfully!");
+    }
+}
+
+
+void DW3000Class::ds_sendFinal(int stage, const AnchorAll &a) {
+    setMode(1);
+    write(0x14, 0x01, sender & 0xFF);
+    write(0x14, 0x02, destination & 0xFF);
+    write(0x14, 0x03, stage & 0x7);
+    
+
+    write(0x14, 0x04, a.AncA.resp_count & 0xFF);
+    write(0x14, 0x05, a.AncB.resp_count & 0xFF);
+    write(0x14, 0x06, a.AncC.resp_count & 0xFF);
+    write(0x14, 0x07, a.AncD.resp_count & 0xFF);
+
+    setFrameLength(8);
+
+    // Debug 출력
+    if (DEBUG_PRINT) {
+        Serial.print("[SEND] sender=0x");
+        Serial.print(sender, HEX);
+        Serial.print(" dest=0x");
+        Serial.print(destination, HEX);
+        Serial.print(" stage=");
+        Serial.println(stage);
+        Serial.print(" resp_count=");
+        Serial.println(resp_count);
+
+        Serial.print(" A="); Serial.println(a.AncA.resp_count);
+        Serial.print(" B="); Serial.println(a.AncB.resp_count);
+        Serial.print(" C="); Serial.println(a.AncC.resp_count);
+        Serial.print(" D="); Serial.println(a.AncD.resp_count);
+    }
 
     TXInstantRX(); //Await response
 
@@ -422,7 +499,6 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
 */
 int DW3000Class::ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
     
-    // 원 code에서는 DEBUG_OUTPUT
     if (DEBUG_PRINT) {
         Serial.print("\nProcessing Information:");
         Serial.print(" t_roundA: ");
@@ -455,6 +531,7 @@ int DW3000Class::ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int 
 int DW3000Class::ds_getStage() {
     return read(0x12, 0x03) & 0b111;
 }
+
 
 /*
  Checks if frame is error frame by checking its mode bits

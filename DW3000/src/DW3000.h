@@ -18,6 +18,8 @@
 #include "Arduino.h"
 #include "DW3000Constants.h"
 
+// Define in Tag Code
+struct AnchorAll;
 
 class DW3000Class {
 	public:
@@ -34,8 +36,12 @@ class DW3000Class {
 		static void setupGPIO();
 
 		// Double-Sided Ranging
-		static void ds_sendFrame(int stage, int resp_count);
+		static void ds_sendPoll(int stage);
+		static void ds_sendResp(int stage, int resp_count);
+		static void ds_sendFinal(int stage, const Anchorall &a);
 		static void ds_sendRTInfo(int t_roundB, int t_replyB);
+
+		
 		static int  ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
 		static int  ds_getStage();
 		static bool ds_isErrorFrame();

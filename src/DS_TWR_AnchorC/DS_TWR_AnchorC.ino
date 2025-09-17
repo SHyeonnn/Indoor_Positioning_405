@@ -96,7 +96,7 @@ void setup()
   Serial.println("[INFO] Setup finished.");
 
   // Set this deviceID
-  DW3000.setSenderID(AnchorA_ID);
+  DW3000.setSenderID(AnchorC_ID);
   
   DW3000.configureAsTX(); // Configure basic settings for frame transmitting
 
@@ -228,7 +228,7 @@ void loop()
         Serial.print(" stage=");
         Serial.println(Final_stage);
       }
-      int count = DW3000.read(0x12, A_Count) & 0xFF;
+      int count = DW3000.read(0x12, C_Count) & 0xFF;
       anchor.final_Rx = DW3000.readRXTimestamp();
 
       if (count >= 0 && count < anchor.MAX_RESP){
