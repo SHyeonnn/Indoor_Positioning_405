@@ -18,40 +18,6 @@
 #include "Arduino.h"
 #include "DW3000Constants.h"
 
-// Define in Tag Code
-struct Anchor
-{
-  int resp_count = 0;
-  bool received_resp = false;
-  bool received_report = false;
-
-  unsigned long long resp_Rx = 0;
-
-  int t_round_Anc = 0;
-  int t_reply_Anc = 0;
-
-  int t_round_tag = 0;
-  int t_reply_tag = 0;
-
-  int clock_offset = 0;
-
-  int ranging_time = 0;
-  float distance = 0;
-};
-
-struct AnchorAll
-{
-  struct Anchor AncA;
-  struct Anchor AncB;
-  struct Anchor AncC;
-  struct Anchor AncD;
-};
-
-struct Tag
-{
-  unsigned long long poll_Tx = 0;
-  unsigned long long final_Tx = 0;
-};
 
 class DW3000Class {
 	public:
@@ -68,15 +34,10 @@ class DW3000Class {
 		static void setupGPIO();
 
 		// Double-Sided Ranging
-		static void ds_sendPoll(int stage);
-		static void ds_sendResp(int stage, int resp_count);
-		static void ds_sendFinal(int stage, const AnchorAll &a);
+		static void ds_sendFrame(int stage);
 		static void ds_sendRTInfo(int t_roundB, int t_replyB);
-
-
 		static int  ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
 		static int  ds_getStage();
-		static int  ds_getRespCount();
 		static bool ds_isErrorFrame();
 		static void ds_sendErrorFrame();
 
