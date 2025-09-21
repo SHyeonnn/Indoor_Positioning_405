@@ -389,8 +389,8 @@ void DW3000Class::ds_sendFrame(int stage) {
 */
 void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
     setMode(1);
-    write(0x14, 0x01, destination & 0xFF);
-    write(0x14, 0x02, sender & 0xFF);
+    write(0x14, 0x01, sender & 0xFF);
+    write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, 4);
     write(0x14, 0x04, t_roundB);
     write(0x14, 0x08, t_replyB);

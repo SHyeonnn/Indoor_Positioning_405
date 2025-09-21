@@ -69,14 +69,14 @@ class DW3000Class {
 
 		// Double-Sided Ranging
 		static void ds_sendPoll(int stage);
-		static void ds_sendResp(int stage, int resp_count);
-		static void ds_sendFinal(int stage, const AnchorAll &a);
-		static void ds_sendRTInfo(int t_roundB, int t_replyB);
+		static void ds_sendResp(int stage, int anchor_slot, uint32_t slot_time);
+		static void ds_sendFinal(int stage);
+		static void ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uint32_t slot_time);
 
 
-		static int  ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
+		static int  ds_TWR_sym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
+		static int  ds_TWR_Asym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
 		static int  ds_getStage();
-		static int  ds_getRespCount();
 		static bool ds_isErrorFrame();
 		static void ds_sendErrorFrame();
 

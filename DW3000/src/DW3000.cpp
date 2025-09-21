@@ -382,13 +382,12 @@ void DW3000Class::ds_sendPoll(int stage) {
     }
 }
 
-void DW3000Class::ds_sendResp(int stage, int resp_count) {
+void DW3000Class::ds_sendResp(int stage, int anchor_slot, uint32_t slot_time) {
     setMode(1);
     write(0x14, 0x01, sender & 0xFF);
     write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, stage & 0x7);
-    write(0x14, 0x04, resp_count & 0xFF);
-    setFrameLength(5);
+    setFrameLength(4);
 
     // Debug 출력
     if (DEBUG_PRINT) {
@@ -398,11 +397,12 @@ void DW3000Class::ds_sendResp(int stage, int resp_count) {
         Serial.print(destination, HEX);
         Serial.print(" stage=");
         Serial.println(stage);
-        Serial.print(" resp_count=");
-        Serial.println(resp_count);
     }
+    uint64_t delay_time = (anchor_slot*slot_time);
 
-    TXInstantRX(); //Await response
+    delayMicroseconds(delay_time);
+
+    standardTX();
 
     bool error = true;
     for (int i = 0; i < 50; i++) {
@@ -417,19 +417,14 @@ void DW3000Class::ds_sendResp(int stage, int resp_count) {
 }
 
 
-void DW3000Class::ds_sendFinal(int stage, const AnchorAll &a) {
+void DW3000Class::ds_sendFinal(int stage) {
     setMode(1);
     write(0x14, 0x01, sender & 0xFF);
     write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, stage & 0x7);
-    
 
-    write(0x14, 0x04, a.AncA.resp_count & 0xFF);
-    write(0x14, 0x05, a.AncB.resp_count & 0xFF);
-    write(0x14, 0x06, a.AncC.resp_count & 0xFF);
-    write(0x14, 0x07, a.AncD.resp_count & 0xFF);
 
-    setFrameLength(8);
+    setFrameLength(4);
 
     // Debug 출력
     if (DEBUG_PRINT) {
@@ -439,10 +434,6 @@ void DW3000Class::ds_sendFinal(int stage, const AnchorAll &a) {
         Serial.print(destination, HEX);
         Serial.print(" stage=");
         Serial.println(stage);
-        Serial.print(" A="); Serial.println(a.AncA.resp_count);
-        Serial.print(" B="); Serial.println(a.AncB.resp_count);
-        Serial.print(" C="); Serial.println(a.AncC.resp_count);
-        Serial.print(" D="); Serial.println(a.AncD.resp_count);
     }
 
     TXInstantRX(); //Await response
@@ -464,10 +455,10 @@ void DW3000Class::ds_sendFinal(int stage, const AnchorAll &a) {
  @param t_roundB The time that it took between chip B (this chip) sending an answer and getting a response (rx2 - tx1)
  @param t_replyB The time that the chip took to process the received frame (tx1 - rx1)
 */
-void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
+void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uint32_t slot_time) {
     setMode(1);
-    write(0x14, 0x01, destination & 0xFF);
-    write(0x14, 0x02, sender & 0xFF);
+    write(0x14, 0x01, sender & 0xFF);
+    write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, 4);
     write(0x14, 0x04, t_roundB);
     write(0x14, 0x08, t_replyB);
@@ -475,13 +466,25 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
     setFrameLength(12);
     //Debug
     if (DEBUG_PRINT) {
-    Serial.print("[SEND RTINFO]");
-    Serial.print("  sender=0x"); Serial.print(sender, HEX);
-    Serial.print("  dest=0x");   Serial.print(destination, HEX);
-    Serial.print("  stage=");    Serial.println(4);
-    Serial.print("               t_roundB="); Serial.print(t_roundB);
-    Serial.print("  t_replyB="); Serial.println(t_replyB);
+        Serial.print("[SEND RTINFO]");
+        Serial.print("  sender=0x"); Serial.print(sender, HEX);
+        Serial.print("  dest=0x");   Serial.print(destination, HEX);
+        Serial.print("  stage=");    Serial.println(4);
+        Serial.print("               t_roundB="); Serial.print(t_roundB);
+        Serial.print("  t_replyB="); Serial.println(t_replyB);
     }
+
+    unsigned long long rx_ts = readRXTimestamp();
+
+    uint64_t delay_time = (anchor_slot*slot_time);
+    if (DEBUG_PRINT) {
+        Serial.print("[SEND RTINFO]");
+        Serial.println("  Delay= "); Serial.print(delay_time);
+    }
+
+    delayMicroseconds(delay_time);
+
+    standardTX();
     TXInstantRX();
 }
 
@@ -494,7 +497,7 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB) {
  @param clk_offset The calculated clock offset between both chips (See DW3000 User Manual 10.1 for more)
  @return returns the time in units of 15.65ps that the frames were in the air on average (only one direction)
 */
-int DW3000Class::ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
+int DW3000Class::ds_TWR_sym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
     
     if (DEBUG_PRINT) {
         Serial.print("\nProcessing Information:");
@@ -521,16 +524,51 @@ int DW3000Class::ds_processRTInfo(int t_roundA, int t_replyA, int t_roundB, int 
     return combined_rt / 2; // divided by 2 to get just one range
 }
 
+int DW3000Class::ds_TWR_Asym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
+    
+    if (DEBUG_PRINT) {
+        Serial.print("\nProcessing Information:");
+        Serial.print(" t_roundA: ");
+        Serial.print(t_roundA);
+        Serial.print("  t_replyA: ");
+        Serial.print(t_replyA);
+        Serial.print("  t_roundB: ");
+        Serial.print(t_roundB);
+        Serial.print("  t_replyB: ");
+        Serial.println(t_replyB);
+    }
+
+    int reply_diff = t_replyA - t_replyB;
+
+    long double clock_offset = t_replyA > t_replyB ? 1.0 + getClockOffset(clk_offset) : 1.0 - getClockOffset(clk_offset);
+
+    int first_rt = t_roundA - t_replyB;
+    int second_rt = t_roundB - t_replyA;
+
+    int combined_rt = (first_rt + second_rt - (reply_diff - (reply_diff * clock_offset))) / 2;
+    int combined_rt_raw = (first_rt + second_rt) / 2;
+
+    double numerator =  (double)t_roundA * (double)t_roundB - (double)t_replyA * (double)t_replyB;
+    double denominator = (double)t_roundA + (double)t_roundB + (double)t_replyA + (double)t_replyB;
+
+    int t_prop =  numerator / denominator;
+
+    if (DEBUG_PRINT) {
+        Serial.print("\nProcessing Information:");
+        Serial.print(" t_prop =  ");
+        Serial.println(t_prop, 6);
+        Serial.print("  combined_rt_raw = ");
+        Serial.println(combined_rt_raw);
+    }
+    return t_prop; // divided by 2 to get just one range
+}
+
 /*
  Returns the stage that the frame was sent in
  @return The stage that the frame was sent in (read from the TX_Buffer)
 */
 int DW3000Class::ds_getStage() {
     return read(0x12, 0x03) & 0b111;
-}
-
-int DW3000Class::ds_getRespCount() {
-    return read(0x12, 0x04) & 0xFF;
 }
 
 /*
