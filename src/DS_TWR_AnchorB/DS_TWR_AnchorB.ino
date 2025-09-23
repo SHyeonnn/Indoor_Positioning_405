@@ -126,7 +126,7 @@ void loop()
       resetAnchorStruct(anchor);
       
       DW3000.standardRX();
-      if (DEBUG_PRINT){
+      if (0){
         //Debug msg
         Serial.println("-----------------------------------------");
         Serial.println("----------------!!START!!----------------");
@@ -286,6 +286,8 @@ void loop()
       DW3000.ds_sendRTInfo(anchor.t_round, anchor.t_reply, ANCHOR_SLOT, SLOT_TIME);
 
       if (DEBUG_PRINT){
+        Serial.print("anchor t_round = "); Serial.println(anchor.t_round);
+        Serial.print("anchor t_reply = "); Serial.println(anchor.t_reply);
         Serial.println("Start Transmit the Report msg");
         Serial.println("-----------------!!END!!-----------------");
         Serial.println("-----------------------------------------");

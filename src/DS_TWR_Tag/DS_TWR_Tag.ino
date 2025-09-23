@@ -20,7 +20,7 @@
 
 #define ROUND_DELAY 1000 // Delay in milliseconds that the chip waits between PING requests
 
-#define GUARD_TIME 1000 
+#define GUARD_TIME 200 
 
 //Setting the ID of anchor & tag
 
@@ -37,7 +37,7 @@
 //Slot Setting
 // Anchor A : Slot 0, B : 1, C : 2, D : 3
 #define NUM_ANCHORS 2
-#define SLOT_TIME 20000   // 2000 µs = 2 ms
+#define SLOT_TIME 2000   // 2000 µs = 2 ms
 
 static int frame_buffer = 0; // Variable to store the transmitted message
 static int rx_status; // Variable to store the current status of the receiver operation
@@ -110,7 +110,7 @@ void loop()
 
     // Transmit the Poll message
     case 0:  // Start ranging.
-
+      delay(ROUND_DELAY);
       // Initialize Anchor & Tag Struct
       resetAnchorAll(anchor_all);
       resetTag(tag);
@@ -149,10 +149,14 @@ void loop()
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful
               if (DW3000.ds_isErrorFrame()) {
-                Serial.println("[WARNING] Error frame detected! Reverting back to stage 0.");
+                if (DEBUG_PRINT) {
+                  Serial.println("[WARNING] Error frame detected! Reverting back to stage 0.");
+                }
               } else if (DW3000.ds_getStage() != 2) {
-                Serial.println("Error Get Stage");
-                Serial.println(DW3000.ds_getStage());
+                if (DEBUG_PRINT) {
+                  Serial.println("Error Get Stage");
+                  Serial.println(DW3000.ds_getStage());
+                }
                 DW3000.ds_sendErrorFrame();
               } else {
     
@@ -182,22 +186,31 @@ void loop()
               }
             } else // if rx_status returns error (2)
             {
-              Serial.println("[ERROR] Receiver Error occured! Aborting event.");
+              if (DEBUG_PRINT) {
+                Serial.println("[ERROR] Receiver Error occured! Aborting event.");
+              }
               DW3000.clearSystemStatus();
             }
           }
         }
 
         if (!received) {
-          Serial.print("[WARNING] No Response in Slot ");
-          Serial.println(slot);
+          if (DEBUG_PRINT) {
+            Serial.print("[WARNING] No Response in Slot ");
+            Serial.println(slot);
+          }
+          
         }
       }
       if (allRespReceived(anchor_all)) {
-        Serial.println("[INFO] All responses received! → Stage 2");
+        if (DEBUG_PRINT) {
+          Serial.println("[INFO] All responses received! → Stage 2");
+        }
         curr_stage = 2;
       } else{
-        Serial.println("[ERROR] Missing responses. → Stage 0");
+        if (DEBUG_PRINT) {
+          Serial.println("[ERROR] Missing responses. → Stage 0");
+        }
         curr_stage = 0;
       }
       
@@ -208,8 +221,9 @@ void loop()
       
       DW3000.setDestinationID(BROADCAST_ID);
       DW3000.ds_sendFinal(3);
-      Serial.println("Start Transmit the Final msg");
-
+      if (DEBUG_PRINT) {
+        Serial.println("Start Transmit the Final msg");
+      }
       tag.final_Tx = DW3000.readTXTimestamp();
       delayMicroseconds(SLOT_TIME);
       curr_stage = 3;
@@ -229,10 +243,14 @@ void loop()
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful
               if (DW3000.ds_isErrorFrame()) {
-                Serial.println("[WARNING] Error frame detected! Ignored");
+                if (DEBUG_PRINT) {
+                  Serial.println("[WARNING] Error frame detected! Ignored");
+                }
               } else if (DW3000.ds_getStage() != 4) {
-                Serial.println("Error Get Stage");
-                Serial.println(DW3000.ds_getStage());
+                if (DEBUG_PRINT) {
+                  Serial.println("Error Get Stage");
+                  Serial.println(DW3000.ds_getStage());
+                }
                 DW3000.ds_sendErrorFrame();
               } else {
                 int check_sender = DW3000.getSenderID();
@@ -263,28 +281,38 @@ void loop()
                   received = true;
                   break;
                 } else {
-                  Serial.print("[WARNING] Ignored frame from sender=0x");
-                  Serial.println(check_sender, HEX);
+                  if (DEBUG_PRINT) {
+                    Serial.print("[WARNING] Ignored frame from sender=0x");
+                    Serial.println(check_sender, HEX);
+                  }
                 }
               }
             } else // if rx_status returns error (2)
             {
-              Serial.println("[ERROR] Receiver Error occured! Aborting event.");
+              if (DEBUG_PRINT) {
+                Serial.println("[ERROR] Receiver Error occured! Aborting event.");
+              }
               DW3000.clearSystemStatus();
             }
           }
         }
 
         if (!received) {
-          Serial.print("[WARNING] No Response in Slot ");
-          Serial.println(slot);
+          if (DEBUG_PRINT) {
+            Serial.print("[WARNING] No Response in Slot ");
+            Serial.println(slot);
+          }
         }
       }
       if (allReportsReceived(anchor_all)) {
-        Serial.println("[INFO] All Reports received! → Stage 4");
+        if (DEBUG_PRINT) {
+          Serial.println("[INFO] All Reports received! → Stage 4");
+        }
         curr_stage = 4;
       } else{
-        Serial.println("[ERROR] Missing responses. → Stage 0");
+        if (DEBUG_PRINT) {
+          Serial.println("[ERROR] Missing responses. → Stage 0");
+        }
         curr_stage = 0;
       }
       
@@ -371,6 +399,8 @@ void loop()
         //Serial.print("[RESULT] Anchor C distance = "); Serial.println(anchor_all.AncC.distance);
         //Serial.print("[RESULT] Anchor D distance = "); Serial.println(anchor_all.AncD.distance);
       }
+      Serial.println("[RESULT] Anchor A distance = "); Serial.println(anchor_all.AncA.distance);
+      Serial.println("[RESULT] Anchor B distance = "); Serial.println(anchor_all.AncB.distance);
 
 
       if (DEBUG_PRINT) {
@@ -383,9 +413,12 @@ void loop()
       break;
     
     default:
-      Serial.print("[ERROR] Entered unknown stage (");
-      Serial.print(curr_stage);
-      Serial.println("). Reverting back to stage 0");
+      if (DEBUG_PRINT) {
+        Serial.print("[ERROR] Entered unknown stage (");
+        Serial.print(curr_stage);
+        Serial.println("). Reverting back to stage 0");
+      }
+      
 
       curr_stage = 0;
       break;
