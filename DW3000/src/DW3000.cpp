@@ -20,7 +20,7 @@
 DW3000Class DW3000;
 
 #define DEBUG_OUTPUT 0 // Turn to 1 to get all reads, writes, etc. as info in the console
-#define DEBUG_PRINT 1 // Turn to 1 to get all reads, writes, etc. as info in the console
+#define DEBUG_PRINT 0 // Turn to 1 to get all reads, writes, etc. as info in the console
 
 int antenna_delay = 0x3FCA; // For calibration purposes; the smaller the number, the longer the ranging results
 
@@ -378,7 +378,7 @@ void DW3000Class::ds_sendPoll(int stage) {
         }
     };
     if (error) {
-        Serial.println("[ERROR] Could not send frame successfully!");
+        Serial.println("[ERROR] POLL Could not send frame successfully!");
     }
 }
 
@@ -412,7 +412,7 @@ void DW3000Class::ds_sendResp(int stage, int anchor_slot, uint32_t slot_time) {
         }
     };
     if (error) {
-        Serial.println("[ERROR] Could not send frame successfully!");
+        Serial.println("[ERROR] RESP Could not send frame successfully!");
     }
 }
 
@@ -446,7 +446,7 @@ void DW3000Class::ds_sendFinal(int stage) {
         }
     };
     if (error) {
-        Serial.println("[ERROR] Could not send frame successfully!");
+        Serial.println("[ERROR] FINAL Could not send frame successfully!");
     }
 }
 
