@@ -27,11 +27,11 @@ struct Anchor
 
   unsigned long long resp_Rx = 0;
 
-  int t_round_Anc = 0;
-  int t_reply_Anc = 0;
+  long long t_round_Anc = 0;
+  long long t_reply_Anc = 0;
 
-  int t_round_tag = 0;
-  int t_reply_tag = 0;
+  long long t_round_tag = 0;
+  long long t_reply_tag = 0;
 
   int clock_offset = 0;
 
@@ -71,11 +71,12 @@ class DW3000Class {
 		static void ds_sendPoll(int stage);
 		static void ds_sendResp(int stage, int anchor_slot, uint32_t slot_time);
 		static void ds_sendFinal(int stage);
-		static void ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uint32_t slot_time);
+
+		static void ds_sendRTInfo(uint32_t t_roundB, uint32_t t_replyB, int anchor_slot, uint32_t slot_time);
 
 
-		static int  ds_TWR_sym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
-		static int  ds_TWR_Asym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clock_offset);
+		static unsigned long long  ds_TWR_sym_process(unsigned long long t_roundA, unsigned long long t_replyA, unsigned long long t_roundB, unsigned long long t_replyB, int clock_offset);
+		static unsigned long long  ds_TWR_Asym_process(unsigned long long t_roundA, unsigned long long t_replyA, unsigned long long t_roundB, unsigned long long t_replyB, int clock_offset);
 		static int  ds_getStage();
 		static bool ds_isErrorFrame();
 		static void ds_sendErrorFrame();

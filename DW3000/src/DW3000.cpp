@@ -356,8 +356,7 @@ void DW3000Class::ds_sendPoll(int stage) {
     write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, stage & 0x7);
     setFrameLength(4);
-    
-    //(read(0x12, 0x00) & 0x7) == 7
+
 
     // Debug 출력
     if (DEBUG_PRINT) {
@@ -457,7 +456,7 @@ void DW3000Class::ds_sendFinal(int stage) {
  @param t_roundB The time that it took between chip B (this chip) sending an answer and getting a response (rx2 - tx1)
  @param t_replyB The time that the chip took to process the received frame (tx1 - rx1)
 */
-void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uint32_t slot_time) {
+void DW3000Class::ds_sendRTInfo(uint32_t t_roundB, uint32_t t_replyB, int anchor_slot, uint32_t slot_time) {
     setMode(1);
     write(0x14, 0x01, sender & 0xFF);
     write(0x14, 0x02, destination & 0xFF);
@@ -497,7 +496,7 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uin
  @param clk_offset The calculated clock offset between both chips (See DW3000 User Manual 10.1 for more)
  @return returns the time in units of 15.65ps that the frames were in the air on average (only one direction)
 */
-int DW3000Class::ds_TWR_sym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
+unsigned long long DW3000Class::ds_TWR_sym_process(unsigned long long t_roundA, unsigned long long t_replyA, unsigned long long t_roundB, unsigned long long t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
     
     if (DEBUG_PRINT) {
         Serial.print("\nProcessing Information:");
@@ -511,20 +510,20 @@ int DW3000Class::ds_TWR_sym_process(int t_roundA, int t_replyA, int t_roundB, in
         Serial.println(t_replyB);
     }
 
-    int reply_diff = t_replyA - t_replyB;
+    unsigned long long reply_diff = t_replyA - t_replyB;
 
     long double clock_offset = t_replyA > t_replyB ? 1.0 + getClockOffset(clk_offset) : 1.0 - getClockOffset(clk_offset);
 
-    int first_rt = t_roundA - t_replyB;
-    int second_rt = t_roundB - t_replyA;
+    unsigned long long first_rt = t_roundA - t_replyB;
+    unsigned long long second_rt = t_roundB - t_replyA;
 
-    int combined_rt = (first_rt + second_rt - (reply_diff - (reply_diff * clock_offset))) / 2;
-    int combined_rt_raw = (first_rt + second_rt) / 2;
+    unsigned long long combined_rt = (first_rt + second_rt - (reply_diff - (reply_diff * clock_offset))) / 2;
+    unsigned long long combined_rt_raw = (first_rt + second_rt) / 2;
 
     return combined_rt / 2; // divided by 2 to get just one range
 }
 
-int DW3000Class::ds_TWR_Asym_process(int t_roundA, int t_replyA, int t_roundB, int t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
+unsigned long long DW3000Class::ds_TWR_Asym_process(unsigned long long t_roundA, unsigned long long t_replyA, unsigned long long t_roundB, unsigned long long t_replyB, int clk_offset) { //returns ranging time in DW3000 ps units (~15.65ps per unit)
     
     if (DEBUG_PRINT) {
         Serial.print("\nProcessing Information:");
@@ -538,20 +537,20 @@ int DW3000Class::ds_TWR_Asym_process(int t_roundA, int t_replyA, int t_roundB, i
         Serial.println(t_replyB);
     }
 
-    int reply_diff = t_replyA - t_replyB;
+    unsigned long long reply_diff = t_replyA - t_replyB;
 
     long double clock_offset = t_replyA > t_replyB ? 1.0 + getClockOffset(clk_offset) : 1.0 - getClockOffset(clk_offset);
 
-    int first_rt = t_roundA - t_replyB;
-    int second_rt = t_roundB - t_replyA;
+    unsigned long long first_rt = t_roundA - t_replyB;
+    unsigned long long second_rt = t_roundB - t_replyA;
 
-    int combined_rt = (first_rt + second_rt - (reply_diff - (reply_diff * clock_offset))) / 2;
-    int combined_rt_raw = (first_rt + second_rt) / 2;
+    unsigned long long combined_rt = (first_rt + second_rt - (reply_diff - (reply_diff * clock_offset))) / 2;
+    unsigned long long combined_rt_raw = (first_rt + second_rt) / 2;
 
-    double numerator =  (double)t_roundA * (double)t_roundB - (double)t_replyA * (double)t_replyB;
-    double denominator = (double)t_roundA + (double)t_roundB + (double)t_replyA + (double)t_replyB;
+    unsigned long long numerator =  t_roundA * t_roundB - t_replyA * t_replyB;
+    unsigned long long denominator = t_roundA + t_roundB + t_replyA + t_replyB;
 
-    int t_prop =  numerator / denominator;
+    unsigned long long t_prop =  numerator / denominator;
 
     if (DEBUG_PRINT) {
         Serial.print("\nProcessing Information:");

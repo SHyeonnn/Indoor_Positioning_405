@@ -31,7 +31,7 @@
 #define AnchorD_ID 0x04
 
 #define BROADCAST_ID 0xFF
-
+#define TEST_DELAY 50000
 
 
 //Slot Setting
@@ -145,7 +145,7 @@ void loop()
         unsigned long long start_time = micros();
    
         while (micros() - start_time < SLOT_TIME+GUARD_TIME) {
-          if (rx_status = DW3000.receivedFrameSucc()) { delay(50); // 20hz 
+          if (rx_status = DW3000.receivedFrameSucc()) { delayMicroseconds(TEST_DELAY); // 20hz heredelay
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful
               if (DW3000.ds_isErrorFrame()) {
@@ -238,7 +238,7 @@ void loop()
         bool received = false;
         unsigned long long start_time = micros();
         
-        while (micros() - start_time < SLOT_TIME+GUARD_TIME) { delay(50);
+        while (micros() - start_time < SLOT_TIME+GUARD_TIME) { delayMicroseconds(TEST_DELAY); //heredelay
           if (rx_status = DW3000.receivedFrameSucc()) {
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful

@@ -2,7 +2,8 @@
 
 #include "DW3000.h"
 
-#define DEBUG_PRINT 1 
+#define DEBUG_PRINT 0 
+#define DEBUG_PRINT1 1 
 
 /*
    BE AWARE: Baud Rate got changed to 2.000.000!
@@ -21,6 +22,7 @@
 //Setting the ID of anchor & tag
 #define TAG_ID 0xA0
 #define ANCHOR_B
+#define TEST_DELAY 50000
 
 #define AnchorA_ID 0x01
 #define AnchorB_ID 0x02
@@ -126,7 +128,7 @@ void loop()
       resetAnchorStruct(anchor);
       
       DW3000.standardRX();
-      if (0){
+      if (DEBUG_PRINT){
         //Debug msg
         Serial.println("-----------------------------------------");
         Serial.println("----------------!!START!!----------------");
@@ -192,7 +194,7 @@ void loop()
       }
 
       DW3000.setDestinationID(TAG_ID);
-      DW3000.ds_sendResp(2, ANCHOR_SLOT, SLOT_TIME);
+      DW3000.ds_sendResp(2, ANCHOR_SLOT, (SLOT_TIME + TEST_DELAY));
       // sender = 0x1, dest = 0xA0, stage = 2
 
       anchor.resp_Tx = DW3000.readTXTimestamp();
@@ -283,11 +285,9 @@ void loop()
 
       // Send the Report message
       DW3000.setDestinationID(TAG_ID);
-      DW3000.ds_sendRTInfo(anchor.t_round, anchor.t_reply, ANCHOR_SLOT, SLOT_TIME);
+      DW3000.ds_sendRTInfo(anchor.t_round, anchor.t_reply, ANCHOR_SLOT, (SLOT_TIME + TEST_DELAY));
 
       if (DEBUG_PRINT){
-        Serial.print("anchor t_round = "); Serial.println(anchor.t_round);
-        Serial.print("anchor t_reply = "); Serial.println(anchor.t_reply);
         Serial.println("Start Transmit the Report msg");
         Serial.println("-----------------!!END!!-----------------");
         Serial.println("-----------------------------------------");
