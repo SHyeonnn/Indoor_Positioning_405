@@ -37,7 +37,7 @@
 //Slot Setting
 // Anchor A : Slot 0, B : 1, C : 2, D : 3
 #define NUM_ANCHORS 2
-#define SLOT_TIME 2000   // 2000 µs = 2 ms
+#define SLOT_TIME 50000   // 2000 µs = 2 ms
 
 static int frame_buffer = 0; // Variable to store the transmitted message
 static int rx_status; // Variable to store the current status of the receiver operation
@@ -110,7 +110,7 @@ void loop()
 
     // Transmit the Poll message
     case 0:  // Start ranging.
-      delay(ROUND_DELAY);
+      delayMicroseconds(ROUND_DELAY);
       // Initialize Anchor & Tag Struct
       resetAnchorAll(anchor_all);
       resetTag(tag);
@@ -145,7 +145,7 @@ void loop()
         unsigned long long start_time = micros();
    
         while (micros() - start_time < SLOT_TIME+GUARD_TIME) {
-          if (rx_status = DW3000.receivedFrameSucc()) {
+          if (rx_status = DW3000.receivedFrameSucc()) { delay(50); // 20hz 
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful
               if (DW3000.ds_isErrorFrame()) {
@@ -238,7 +238,7 @@ void loop()
         bool received = false;
         unsigned long long start_time = micros();
         
-        while (micros() - start_time < SLOT_TIME+GUARD_TIME) {
+        while (micros() - start_time < SLOT_TIME+GUARD_TIME) { delay(50);
           if (rx_status = DW3000.receivedFrameSucc()) {
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful

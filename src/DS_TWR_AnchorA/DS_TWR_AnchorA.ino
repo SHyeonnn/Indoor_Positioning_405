@@ -2,7 +2,8 @@
 
 #include "DW3000.h"
 
-#define DEBUG_PRINT 1 
+#define DEBUG_PRINT 0 
+#define DEBUG_PRINT1 1 
 
 /*
    BE AWARE: Baud Rate got changed to 2.000.000!
@@ -43,7 +44,7 @@
   #error "No Define Anchor(ANCHOR_A OR ANCHOR_B OR ANCHOR_C OR ANCHOR_D)"
 #endif
 
-#define SLOT_TIME 2000
+#define SLOT_TIME 50000
 
 const int MAX_RESP = 20;
 static int frame_buffer = 0; // Variable to store the transmitted message

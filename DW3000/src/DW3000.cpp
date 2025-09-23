@@ -356,6 +356,8 @@ void DW3000Class::ds_sendPoll(int stage) {
     write(0x14, 0x02, destination & 0xFF);
     write(0x14, 0x03, stage & 0x7);
     setFrameLength(4);
+    
+    //(read(0x12, 0x00) & 0x7) == 7
 
     // Debug 출력
     if (DEBUG_PRINT) {
@@ -402,7 +404,7 @@ void DW3000Class::ds_sendResp(int stage, int anchor_slot, uint32_t slot_time) {
 
     delayMicroseconds(delay_time);
 
-    standardTX();
+    TXInstantRX();
 
     bool error = true;
     for (int i = 0; i < 50; i++) {
@@ -483,8 +485,6 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uin
     }
 
     delayMicroseconds(delay_time);
-
-    standardTX();
     TXInstantRX();
 }
 
