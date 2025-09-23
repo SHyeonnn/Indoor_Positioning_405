@@ -479,7 +479,7 @@ void DW3000Class::ds_sendRTInfo(int t_roundB, int t_replyB, int anchor_slot, uin
     uint64_t delay_time = (anchor_slot*slot_time);
     if (DEBUG_PRINT) {
         Serial.print("[SEND RTINFO]");
-        Serial.println("  Delay= "); Serial.print(delay_time);
+        Serial.print("  Delay= "); Serial.println(delay_time);
     }
 
     delayMicroseconds(delay_time);

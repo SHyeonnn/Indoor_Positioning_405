@@ -18,7 +18,9 @@
    This approach is a more advanced version of the classical ping and pong with timestamp examples.
 */
 
-#define ROUND_DELAY 500 // Delay in milliseconds that the chip waits between PING requests
+#define ROUND_DELAY 1000 // Delay in milliseconds that the chip waits between PING requests
+
+#define GUARD_TIME 1000 
 
 //Setting the ID of anchor & tag
 
@@ -35,7 +37,7 @@
 //Slot Setting
 // Anchor A : Slot 0, B : 1, C : 2, D : 3
 #define NUM_ANCHORS 2
-#define SLOT_TIME 2000   // 2000 µs = 2 ms
+#define SLOT_TIME 20000   // 2000 µs = 2 ms
 
 static int frame_buffer = 0; // Variable to store the transmitted message
 static int rx_status; // Variable to store the current status of the receiver operation
@@ -142,7 +144,7 @@ void loop()
         bool received = false;
         unsigned long long start_time = micros();
    
-        while (micros() - start_time < SLOT_TIME) {
+        while (micros() - start_time < SLOT_TIME+GUARD_TIME) {
           if (rx_status = DW3000.receivedFrameSucc()) {
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful
@@ -196,7 +198,7 @@ void loop()
         curr_stage = 2;
       } else{
         Serial.println("[ERROR] Missing responses. → Stage 0");
-        //curr_stage = 0;
+        curr_stage = 0;
       }
       
       break;
@@ -222,7 +224,7 @@ void loop()
         bool received = false;
         unsigned long long start_time = micros();
         
-        while (micros() - start_time < SLOT_TIME+500) {
+        while (micros() - start_time < SLOT_TIME+GUARD_TIME) {
           if (rx_status = DW3000.receivedFrameSucc()) {
             DW3000.clearSystemStatus();
             if (rx_status == 1) { // If frame reception was successful
@@ -283,7 +285,7 @@ void loop()
         curr_stage = 4;
       } else{
         Serial.println("[ERROR] Missing responses. → Stage 0");
-        curr_stage = 5;
+        curr_stage = 0;
       }
       
       break;
@@ -370,7 +372,6 @@ void loop()
         //Serial.print("[RESULT] Anchor D distance = "); Serial.println(anchor_all.AncD.distance);
       }
 
-      curr_stage = 5;
 
       if (DEBUG_PRINT) {
         Serial.println("-----------------!!END!!-----------------");
@@ -378,14 +379,15 @@ void loop()
       }
 
       delay(ROUND_DELAY);
+      curr_stage = 0;
       break;
     
     default:
-      //Serial.print("[ERROR] Entered unknown stage (");
-      //Serial.print(curr_stage);
-      //Serial.println("). Reverting back to stage 0");
+      Serial.print("[ERROR] Entered unknown stage (");
+      Serial.print(curr_stage);
+      Serial.println("). Reverting back to stage 0");
 
-      //curr_stage = 0;
+      curr_stage = 0;
       break;
  
   
