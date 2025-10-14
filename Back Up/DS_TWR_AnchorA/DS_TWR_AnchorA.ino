@@ -2,7 +2,7 @@
 
 #include "DW3000.h"
 
-#define DEBUG_PRINT 1
+#define DEBUG_PRINT 0
 #define DEBUG_PRINT1 1 
 
 /*
@@ -21,7 +21,7 @@
 
 //Setting the ID of anchor & tag
 #define TAG_ID 0xA0
-#define ANCHOR_B
+#define ANCHOR_A
 #define TEST_DELAY 0
 
 #define AnchorA_ID 0x01

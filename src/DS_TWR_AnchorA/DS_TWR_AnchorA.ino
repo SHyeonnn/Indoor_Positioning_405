@@ -2,8 +2,8 @@
 
 #include "DW3000.h"
 
-#define DEBUG_PRINT 1 
-#define DEBUG_PRINT1 0 
+#define DEBUG_PRINT 1
+#define DEBUG_PRINT1 1 
 
 /*
    BE AWARE: Baud Rate got changed to 2.000.000!
@@ -22,7 +22,7 @@
 //Setting the ID of anchor & tag
 #define TAG_ID 0xA0
 #define ANCHOR_A
-#define TEST_DELAY 50000
+#define TEST_DELAY 0
 
 #define AnchorA_ID 0x01
 #define AnchorB_ID 0x02
@@ -45,7 +45,7 @@
   #error "No Define Anchor(ANCHOR_A OR ANCHOR_B OR ANCHOR_C OR ANCHOR_D)"
 #endif
 
-#define SLOT_TIME 50000
+#define SLOT_TIME 10000
 
 const int MAX_RESP = 20;
 static int frame_buffer = 0; // Variable to store the transmitted message
@@ -128,60 +128,32 @@ void loop()
       resetAnchorStruct(anchor);
       
       DW3000.standardRX();
-      if (DEBUG_PRINT1){
+
+      if (0){
         //Debug msg
         Serial.println("-----------------------------------------");
         Serial.println("----------------!!START!!----------------");
-        Serial.println("Case0, Wait the poll message");
+        Serial.println("Wait Poll");
       }
-
-      if (rx_status = DW3000.receivedFrameSucc()) {
+      
+      if(rx_status = DW3000.receivedFrameSucc()){
+      if (rx_status == 1) {
         DW3000.clearSystemStatus();
-        if (rx_status == 1) { // If frame reception was successful
-          if (DW3000.ds_isErrorFrame()) {
-            Serial.println("[WARNING] Error frame detected!");
-            curr_stage = 0;
-            DW3000.standardRX();
-          } else if (DW3000.ds_getStage() != 1) {
-            if (DEBUG_PRINT){
-              //Debug msg print
-              Serial.print("Error Stage : ");
-              Serial.println(rx_status);
-            }
 
-            DW3000.ds_sendErrorFrame();
-            DW3000.standardRX();
-            curr_stage = 0;
-          } else {
-            if (DW3000.getSenderID() == TAG_ID){
-              // Successfully Recieved the Poll Message
-              if (DEBUG_PRINT){
-                //Debug msg
-                Serial.println("-----------------------------------------");
-                Serial.println("----------------!!START!!----------------");
-                Serial.println("Success recieved the Poll msg");
-                int poll_sender = DW3000.getSenderID();
-                int poll_destination = DW3000.getDestinationID();
-                int poll_stage = DW3000.ds_getStage();
-                
-                //Debug msg print
-                Serial.print("[POLL msg] sender=0x");
-                Serial.print(poll_sender, HEX);
-                Serial.print(" dest=0x");
-                Serial.print(poll_destination, HEX);
-                Serial.print(" stage=");
-                Serial.println(poll_stage);
-              }
-              anchor.poll_Rx = DW3000.readRXTimestamp();
-              curr_stage = 1;
-            } else{
-              Serial.println("[WARNING] Not Tag ID (Not Poll).");
-            }
+        if (DW3000.ds_getStage() == 1 && DW3000.getSenderID() == TAG_ID) {
+          if (DEBUG_PRINT) {
+            //Debug msg
+            Serial.println("Success recieved Poll");
           }
-        } else // if rx_status returns error (2)
-        {
-          Serial.println("[ERROR] Receiver Error occured! Aborting event.");
+          anchor.poll_Rx = DW3000.readRXTimestamp();
+          curr_stage = 1;
+
+        }} else {
+          if (DEBUG_PRINT) {
+                Serial.println("[ERROR] Poll error Receiver Error occured! Aborting event.");
+          }
           DW3000.clearSystemStatus();
+          DW3000.standardRX();
         }
       }
       break;
@@ -190,91 +162,46 @@ void loop()
     case 1:  // Ranging received. Sending response.
       //Send the Response Message
       if (DEBUG_PRINT){
-      Serial.println("Start Transmit the Response msg");
+      Serial.println("Start Response");
       }
 
       DW3000.setDestinationID(TAG_ID);
       DW3000.ds_sendResp(2, ANCHOR_SLOT, (SLOT_TIME + TEST_DELAY));
-      // sender = 0x1, dest = 0xA0, stage = 2
 
       anchor.resp_Tx = DW3000.readTXTimestamp();
-      if (DEBUG_PRINT){
-        Serial.print("poll_Rx = ");
-        Serial.println(anchor.poll_Rx);
-        Serial.print("resp_Tx = ");
-        Serial.println(anchor.resp_Tx);
-      }
-      DW3000.standardRX();
       curr_stage = 2;
       break;
 
 
     //Receive the Final message
     case 2:
-
-      if (rx_status = DW3000.receivedFrameSucc()){
-          DW3000.clearSystemStatus();
-          if (rx_status == 1) { // If frame reception was successful
-            if (DW3000.ds_isErrorFrame()) {
-              Serial.println("[WARNING] Error frame detected!");
-              DW3000.standardRX();
-              curr_stage = 0;
-            } else if (DW3000.getSenderID() == TAG_ID && DW3000.ds_getStage() == 3){
-                //Success Received the Final msg
-                if (DEBUG_PRINT){
-                  //Debug msg
-                  Serial.println("Success Received the Final msg");
-                  int Final_sender = DW3000.getSenderID();
-                  int Final_destination = DW3000.getDestinationID();
-                  int Final_stage = DW3000.ds_getStage();
-                  
-                  //Debug msg print
-                  Serial.print("[Final msg] sender=0x");
-                  Serial.print(Final_sender, HEX);
-                  Serial.print(" dest=0x");
-                  Serial.print(Final_destination, HEX);
-                  Serial.print(" stage=");
-                  Serial.println(Final_stage);
-                }
-                anchor.final_Rx = DW3000.readRXTimestamp();
-                curr_stage = 3;
-            } else if (DW3000.getSenderID() == AnchorA_ID || 
-                       DW3000.getSenderID() == AnchorB_ID || 
-                       DW3000.getSenderID() == AnchorC_ID || 
-                       DW3000.getSenderID() == AnchorD_ID){
-                if (DEBUG_PRINT) {
-                  Serial.print("[INFO] Ignored frame from sender=0x");
-                  Serial.print(DW3000.getSenderID(), HEX);
-                  Serial.print(" stage=");
-                  Serial.println(DW3000.ds_getStage());
-                }
-                DW3000.clearSystemStatus();
-                DW3000.standardRX();
-              
-            } else if (DW3000.getSenderID() == TAG_ID && DW3000.ds_getStage() == 1){
-                if (DEBUG_PRINT) {
-                    Serial.print("[WARNING] AGAIN POLL Sender ID = 0x");
-                    Serial.print(DW3000.getSenderID(), HEX);
-                    Serial.print(" stage=");
-                    Serial.println(DW3000.ds_getStage());
-                }
-                curr_stage = 0;
-              } else {
-                if (DEBUG_PRINT) {
-                  Serial.print("[WARNING] Unkown Sender ID = 0x");
-                  Serial.print(DW3000.getSenderID(), HEX);
-                  Serial.print(" stage=");
-                  Serial.println(DW3000.ds_getStage());
-                }
-                DW3000.clearSystemStatus();
-                DW3000.standardRX();
-            }
-          } else { // if rx_status returns error (2)
-            Serial.println("[ERROR] Receiver Error occured! Aborting event.");
-            DW3000.clearSystemStatus();
-            DW3000.standardRX();
+      rx_status = DW3000.receivedFrameSucc();
+      if (rx_status == 1) {
+        DW3000.clearSystemStatus();
+        if (DW3000.ds_getStage() == 3 && DW3000.getSenderID() == TAG_ID) {
+          if (DEBUG_PRINT) {
+            //Debug msg
+            Serial.println("Success recieved Poll");
           }
+          anchor.final_Rx = DW3000.readRXTimestamp();
+          curr_stage = 3;
+        } else if (DW3000.ds_getStage() == 1 && DW3000.getSenderID() == TAG_ID) {
+          if (DEBUG_PRINT){
+            Serial.println("[WARNING] AGAIN POLL - stage 0");
+          }
+          curr_stage = 0;
+          DW3000.clearSystemStatus();
+          DW3000.standardRX();
         }
+        
+        else {
+          if (DEBUG_PRINT) {
+            Serial.println("[ERROR] Poll error Receiver Error occured! Aborting event.");
+          }
+          DW3000.clearSystemStatus();
+          DW3000.standardRX();
+        }
+      }
       break;
     
     //Transmit the Report message
@@ -288,12 +215,11 @@ void loop()
       DW3000.ds_sendRTInfo(anchor.t_round, anchor.t_reply, ANCHOR_SLOT, (SLOT_TIME + TEST_DELAY));
 
       if (DEBUG_PRINT){
-        Serial.println("Start Transmit the Report msg");
+        Serial.println("Start Report");
         Serial.println("-----------------!!END!!-----------------");
         Serial.println("-----------------------------------------");
       }
       
-      DW3000.standardRX();
       curr_stage = 0;
       break;
 

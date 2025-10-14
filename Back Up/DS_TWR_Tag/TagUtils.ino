@@ -45,8 +45,8 @@ bool saveResp(AnchorAll &anchors, Tag &tag, int sender_id, unsigned long long re
 }
 
 bool allRespReceived(const AnchorAll &anchors) {
-  return anchors.AncA.received_resp; // &&
-         //anchors.AncB.received_resp; //&&
+  return anchors.AncA.received_resp &&
+         anchors.AncB.received_resp; //&&
          //anchors.AncC.received_resp &&
          //anchors.AncD.received_resp;
 }
@@ -79,8 +79,8 @@ bool saveReport(AnchorAll &anchors, int sender_id, int t_round, int t_reply, int
 }
 
 bool allReportsReceived(const AnchorAll &anchors) {
-  return anchors.AncA.received_report; //&&
-         //anchors.AncB.received_report; // &&
+  return anchors.AncA.received_report &&
+         anchors.AncB.received_report; // &&
          //anchors.AncC.received_report &&
          //anchors.AncD.received_report;
 }
